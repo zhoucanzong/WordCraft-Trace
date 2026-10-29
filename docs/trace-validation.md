@@ -1,6 +1,6 @@
 # Trace 0.2 validation
 
-Validated on macOS arm64, Rust 1.96, Python 3.14, OfficeCLI 1.0.159.
+Validated on macOS arm64, Rust 1.96, Python 3.9.6 and 3.14, OfficeCLI 1.0.159.
 
 - Engine library: 1,085 passed, including the ignored real OfficeCLI test.
 - Python operation runtime/compiler: 8 passed (Unicode, formatting, target stability, input/output guards, unsupported changes, literal escaping, metadata rejection, compaction).
