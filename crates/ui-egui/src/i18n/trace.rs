@@ -1,5 +1,5 @@
 //! Fork-specific interface strings, independent of the pinned upstream catalog.
-pub(super) fn tr(text: &str) -> &str {
+pub(crate) fn tr(text: &str) -> &str {
     if !crate::i18n::current().code().starts_with("zh") {
         return crate::i18n::t(text);
     }
@@ -9,6 +9,15 @@ pub(super) fn tr(text: &str) -> &str {
         "Document → Code" => "从文档编辑到代码",
         "Edit normally. Every committed change is captured automatically." => "像平常一样编辑文档。每次生效的修改都会自动记录。",
         "Verify replay" => "验证回放",
+        "Compact operations" => "简洁 OP",
+        "Native archive" => "完整原生记录归档",
+        "Archive unsupported Python edits with the native engine. Replay requires WordCraft." => {
+            "独立 Python 不支持的操作仍可归档；原生归档回放需要 WordCraft。"
+        }
+        "Export native archive" => "导出完整归档",
+        "Automatic recording · {count} committed edits" => "自动记录 · {count} 次生效编辑",
+        "{count} recorded steps · images included" => "已记录 {count} 步 · 包含图片",
+        "{command} · {count} changes" => "{command} · {count} 处修改",
         "Python code" => "查看 Python 代码",
         "Replay in a new document" => "在新文档中回放选中步骤",
         "Resume project…" => "恢复记录项目…",

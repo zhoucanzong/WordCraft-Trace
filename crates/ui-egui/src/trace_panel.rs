@@ -3,8 +3,11 @@ use crate::WordApp;
 use egui::{Color32, RichText};
 use serde_json::json;
 
-mod labels;
-use labels::tr;
+use crate::i18n::trace::tr;
+
+fn counted(text: &str, count: usize) -> String {
+    crate::i18n::fmt(tr(text), &[("count", &count.to_string())])
+}
 
 pub struct TraceUi {
     pub open: bool,
@@ -51,7 +54,7 @@ pub fn show(app: &mut WordApp, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             ui.label(RichText::new(tr("● TRACE")).color(Color32::from_rgb(29, 157, 110)).strong());
             let count = app.session.trace_current().map_or(0, |j| j.steps.len());
-            ui.label(format!("Automatic recording · {count} committed edits"));
+            ui.label(counted("Automatic recording · {count} committed edits", count));
             if ui.selectable_label(app.trace_ui.open, tr("History & Python")).clicked() {
                 app.trace_ui.open = !app.trace_ui.open;
             }
@@ -62,6 +65,7 @@ pub fn show(app: &mut WordApp, ui: &mut egui::Ui) {
     }
     egui::Panel::right("trace_panel").default_size(330.0).min_size(270.0).max_size(600.0).resizable(true).show(ui, |ui| {
         ui.add_space(8.0);
+        ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Wrap);
         ui.heading(tr("Document → Code"));
         ui.label(tr("Edit normally. Every committed change is captured automatically."));
         ui.add_space(8.0);
@@ -84,7 +88,7 @@ pub fn show(app: &mut WordApp, ui: &mut egui::Ui) {
                 app.trace_ui.show_code = true;
             }
         });
-        if ui.button("简洁 OP / Compact operations").clicked() {
+        if ui.button(tr("Compact operations")).clicked() {
             app.trace_ui.code = app
                 .session
                 .trace_current()
@@ -127,8 +131,9 @@ pub fn show(app: &mut WordApp, ui: &mut egui::Ui) {
             if ui.add_enabled(app.trace_ui.inspection.is_none(), egui::Button::new(tr("Read document structure"))).clicked() {
                 inspect(app, "outline");
             }
-            ui.label(tr("Advanced batch edits (JSON)"));
-            ui.add(egui::TextEdit::multiline(&mut app.trace_ui.batch).code_editor().desired_width(f32::INFINITY).desired_rows(5));
+            let batch_label = ui.label(tr("Advanced batch edits (JSON)"));
+            ui.add(egui::TextEdit::multiline(&mut app.trace_ui.batch).code_editor().desired_width(f32::INFINITY).desired_rows(5))
+                .labelled_by(batch_label.id);
             if ui.add_enabled(app.trace_ui.inspection.is_none(), egui::Button::new(tr("Apply batch & record"))).clicked() {
                 inspect(app, "batch");
             }
@@ -138,8 +143,8 @@ pub fn show(app: &mut WordApp, ui: &mut egui::Ui) {
             ui.small(tr("History automatically saved · Resume project to restore"));
         }
         ui.add_space(8.0);
-        ui.label(tr("Export folder"));
-        ui.add(egui::TextEdit::singleline(&mut app.trace_ui.directory).desired_width(f32::INFINITY));
+        let folder_label = ui.label(tr("Export folder"));
+        ui.add(egui::TextEdit::singleline(&mut app.trace_ui.directory).desired_width(f32::INFINITY)).labelled_by(folder_label.id);
         if ui.add_sized([ui.available_width(), 32.0], egui::Button::new(tr("Export Python + original + edited DOCX"))).clicked() {
             let stamp = wordcraft_engine::cmd::now_iso().replace([':', '-'], "");
             let target = std::path::PathBuf::from(&app.trace_ui.directory).join(format!("trace-{stamp}"));
@@ -149,9 +154,9 @@ pub fn show(app: &mut WordApp, ui: &mut egui::Ui) {
                 Err(e) => format!("Export failed: {e}"),
             };
         }
-        ui.collapsing("完整原生记录归档 / Native archive", |ui| {
-            ui.small("独立 Python 不支持的操作仍可归档；原生归档回放需要 WordCraft。");
-            if ui.button("导出完整归档").clicked() {
+        ui.collapsing(tr("Native archive"), |ui| {
+            ui.small(tr("Archive unsupported Python edits with the native engine. Replay requires WordCraft."));
+            if ui.button(tr("Export native archive")).clicked() {
                 let stamp = wordcraft_engine::cmd::now_iso().replace([':', '-'], "");
                 let path = std::path::PathBuf::from(&app.trace_ui.directory).join(format!("archive-{stamp}"));
                 app.trace_ui.message = match app.run("trace.exportArchive", json!({"directory":path})) {
@@ -170,14 +175,16 @@ pub fn show(app: &mut WordApp, ui: &mut egui::Ui) {
         ui.separator();
         let journal = app.session.trace_current();
         if let Some(journal) = journal {
-            ui.small(format!("{} recorded steps · images included", journal.steps.len()));
+            ui.small(counted("{count} recorded steps · images included", journal.steps.len()));
             egui::ScrollArea::vertical().id_salt("trace_history").show(ui, |ui| {
                 for (i, step) in journal.steps.iter().enumerate().rev() {
                     let selected = app.trace_ui.selected == Some(i);
                     if ui.selectable_label(selected, format!("{:03}  {}", i + 1, crate::i18n::t(&step.label))).clicked() {
                         app.trace_ui.selected = if selected { None } else { Some(i) };
                     }
-                    ui.small(format!("{} · {} changes", step.command, step.changes.len()));
+                    let count = step.changes.len().to_string();
+                    let params = [("command", step.command.as_str()), ("count", count.as_str())];
+                    ui.small(crate::i18n::fmt(tr("{command} · {count} changes"), &params));
                     if app.trace_ui.selected == Some(i) {
                         let details = serde_json::to_string_pretty(&step.changes).unwrap_or_default();
                         let preview: String = details.chars().take(5000).collect();
@@ -196,13 +203,14 @@ pub fn show(app: &mut WordApp, ui: &mut egui::Ui) {
     });
     if app.trace_ui.show_code {
         egui::Window::new(tr("Generated Python replay")).open(&mut app.trace_ui.show_code).default_size([800.0, 600.0]).show(ui.ctx(), |ui| {
-            ui.label(tr("transform(input_path, output_path=None) → output path"));
+            let code_label = ui.label(tr("transform(input_path, output_path=None) → output path"));
             if ui.button(tr("Copy complete code")).clicked() {
                 ui.ctx().copy_text(app.trace_ui.code.clone());
             }
             egui::ScrollArea::both().show(ui, |ui| {
                 let mut preview: String = app.trace_ui.code.chars().take(100_000).collect();
-                ui.add(egui::TextEdit::multiline(&mut preview).code_editor().desired_width(f32::INFINITY).interactive(false));
+                ui.add(egui::TextEdit::multiline(&mut preview).code_editor().desired_width(f32::INFINITY).interactive(false))
+                    .labelled_by(code_label.id);
             });
         });
     }

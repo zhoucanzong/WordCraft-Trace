@@ -3388,7 +3388,7 @@ struct DrawnRulers {
 
 fn drawn_rulers(ctx: &egui::Context, a: &mut WordApp, t: &mut f64) -> DrawnRulers {
     *t += 1.0 / 60.0;
-    let screen = Rect::from_min_size(Pos2::ZERO, vec2(1440.0, 900.0));
+    let screen = Rect::from_min_size(Pos2::ZERO, vec2(1440.0, 930.0));
     let input = egui::RawInput { time: Some(*t), screen_rect: Some(screen), ..Default::default() };
     let out = ctx.run_ui(input, |ui| {
         a.logic(ui.ctx());
@@ -3414,7 +3414,7 @@ fn drawn_rulers(ctx: &egui::Context, a: &mut WordApp, t: &mut f64) -> DrawnRuler
                 }
                 egui::Shape::Text(text) => {
                     let centre = text.pos + text.galley.size() / 2.0;
-                    if text.pos.y >= h.min.y && text.pos.y < h.max.y && text.pos.x >= h.min.x {
+                    if text.pos.y >= h.min.y && text.pos.y < h.max.y && text.pos.x >= h.min.x && text.pos.x < h.max.x {
                         d.h_labels.push((text.galley.text().to_owned(), centre.x));
                     } else if text.pos.x >= v.min.x && text.pos.x < v.max.x && text.pos.y >= v.min.y && text.pos.y < v.max.y {
                         d.v_labels.push((text.galley.text().to_owned(), centre.y));

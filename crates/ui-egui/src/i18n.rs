@@ -488,3 +488,6 @@ mod picker_order_tests {
         assert_eq!(name_sort_key("Türkçe"), "turkce");
     }
 }
+
+// Fork-specific strings belong beside the upstream catalogs.
+pub(crate) mod trace;

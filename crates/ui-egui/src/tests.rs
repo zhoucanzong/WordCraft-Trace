@@ -961,7 +961,8 @@ fn ctrl_wheel_zoom_keeps_the_place_under_the_pointer() {
     let mut a = app();
     a.run("text.insert", json!({"text": "lorem ipsum dolor sit amet consectetur ".repeat(4000)})).unwrap();
     a.run("caret.docStart", json!({})).unwrap();
-    let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1280.0, 800.0));
+    // Preserve the original canvas size alongside the 330px Trace pane and 30px strip.
+    let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1610.0, 830.0));
     let mut t = 0.0;
     let mut frame = |a: &mut WordApp, events: Vec<egui::Event>| {
         t += 1.0 / 60.0;
@@ -1112,6 +1113,8 @@ fn touchpad_scrolls_one_to_one_and_wheel_notches_ease_in() {
 fn web_layout_fills_the_window_width() {
     let ctx = egui::Context::default();
     let mut a = app();
+    // This fixture checks the full-width canvas; the Trace sidebar is user-collapsible.
+    a.trace_ui.open = false;
     a.run("text.insert", json!({"text": "A long paragraph that wraps across the work area. ".repeat(200)})).unwrap();
     let mut t = 0.0;
     // One frame `dt` seconds after the last one, in a window `w` wide.
@@ -1505,7 +1508,8 @@ fn zoom_steps_land_finished_with_animation_effects_off() {
     let ctx = egui::Context::default();
     let system = std::rc::Rc::new(std::cell::Cell::new(Some(false)));
     let mut a = app_with_system_animations(&system);
-    let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1280.0, 800.0));
+    // Preserve the original canvas size alongside the 330px Trace pane and 30px strip.
+    let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1610.0, 830.0));
     let mut t = 0.0;
     // One frame; returns how soon it asked to be drawn again.
     let mut frame = |a: &mut WordApp, events: Vec<egui::Event>| {
@@ -1798,6 +1802,8 @@ fn selected_comment_floats_and_keeps_its_clicks() {
     for width in [1700.0_f32, 1000.0] {
         let ctx = egui::Context::default();
         let mut a = app();
+        // This fixture checks the full-width canvas; the Trace sidebar is user-collapsible.
+        a.trace_ui.open = false;
         a.run("text.insert", json!({"text": "one two three. ".repeat(60)})).unwrap();
         a.run("select.text", json!({"text": "two"})).unwrap();
         a.run("review.newComment", json!({"text": "A comment with a few words in it"})).unwrap();
@@ -2348,6 +2354,8 @@ fn control_wheel_scrolls_the_canvas() {
 fn zoomed_out_pages_sit_side_by_side_and_clicks_land_on_them() {
     let ctx = egui::Context::default();
     let mut a = app();
+    // This fixture checks the full-width canvas; the Trace sidebar is user-collapsible.
+    a.trace_ui.open = false;
     for _ in 0..3 {
         a.run("insert.pageBreak", json!({})).unwrap();
     }
@@ -2389,6 +2397,8 @@ fn zoomed_out_pages_sit_side_by_side_and_clicks_land_on_them() {
 fn zoom_after_one_page_keeps_one_page_per_row() {
     let ctx = egui::Context::default();
     let mut a = app();
+    // This fixture checks the full-width canvas; the Trace sidebar is user-collapsible.
+    a.trace_ui.open = false;
     for _ in 0..3 {
         a.run("insert.pageBreak", json!({})).unwrap();
     }
@@ -4896,6 +4906,8 @@ fn task_panes_share_an_edge_close_and_keep_the_styles_place() {
         node.unwrap_or_else(|| panic!("no {label} beside the title bar")).click();
     }
     let mut a = app();
+    // This fixture checks the full-width canvas; the Trace sidebar is user-collapsible.
+    a.trace_ui.open = false;
     a.run("view.stylesPane", json!({"value": true})).unwrap();
     a.run("view.commentsPane", json!({"value": true})).unwrap();
     let mut h = harness(a);
@@ -7000,4 +7012,18 @@ fn focus_hides_the_ribbon_and_escape_brings_it_back() {
     h.step();
     h.step();
     assert!(h.state().session.view.read_mode && shown(&h, "Focus"), "Immersive Reader keeps the status bar");
+}
+
+// Trace must render in English with only the built-in interface fonts. Previously
+// hard-coded Chinese labels panicked on machines without a CJK font provider.
+#[test]
+fn trace_panel_uses_the_interface_language_with_builtin_fonts() {
+    let mut h = harness(app());
+    h.run_steps(4);
+    h.get_by_label("Compact operations");
+    h.get_by_label("Native archive").click();
+    h.run_steps(3);
+    h.get_by_label("Export native archive");
+    h.get_by_label("OfficeCLI tools").click();
+    h.run_steps(3);
 }

@@ -147,6 +147,8 @@ impl<'a> Exempt<'a> {
         // Installed fonts, and the custom dictionary's words (File › Options › Proofing): the user's own.
         note_global_names();
         let mut names: std::collections::HashSet<String> = GLOBAL_NAMES.with_borrow(Clone::clone);
+        // The export destination is a user-editable filesystem path, not UI wording.
+        names.insert(app.trace_ui.directory.clone());
         names.extend(app.session.doc.styles.styles.iter().map(|s| s.name.clone()));
         // Fonts a document asks for, installed or not (Aptos is drawn with a substitute).
         names.extend([wordcraft_doc::styles::BODY_FONT, wordcraft_doc::styles::HEADING_FONT].map(str::to_string));
