@@ -467,6 +467,12 @@ pub fn read_document(path: &std::path::Path) -> Result<Vec<u8>, String> {
     }
 }
 
+/// Browser documents arrive as bytes; reading a host filesystem path is unsupported.
+#[cfg(target_arch = "wasm32")]
+pub fn read_document(path: &std::path::Path) -> Result<Vec<u8>, String> {
+    read_file(&path.to_string_lossy())
+}
+
 /// The pictures an HTML file names by a path relative to its folder.
 ///
 /// Only regular files inside the folder (after resolving `..` and symlinks) are read. The folder is
@@ -654,6 +660,11 @@ pub fn read_file_capped(path: &str, max: u64, what: &str) -> Result<Vec<u8>, Str
         return Err(too_large());
     }
     Ok(bytes)
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn read_file_capped(path: &str, _max: u64, _what: &str) -> Result<Vec<u8>, String> {
+    read_file(path)
 }
 
 /// The first `max` bytes of the file at `path` (fewer when it is shorter), inside the automation
