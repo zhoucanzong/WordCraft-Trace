@@ -1,0 +1,15 @@
+*~
+plan/
+/target
+/dist
+/corpus
+/log
+.DS_Store
+/.claude/
+/target-*/
+/craft-fonts/
+
+# Trace local exports and Python caches
+__pycache__/
+*.pyc
+trace-exports/
